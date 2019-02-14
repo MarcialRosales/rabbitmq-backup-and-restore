@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eu
+
+SCRIPT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+K8S_NAMESPACE=$($SCRIPT/current-ns)
+echo "Stopping RabbitMQ server on $K8S_NAMESPACE namespace"
+
+helm delete rmq-$K8S_NAMESPACE

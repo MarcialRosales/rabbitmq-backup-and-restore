@@ -1,0 +1,12 @@
+#!/bin/bash
+set -eu
+
+SCRIPT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+K8S_NAMESPACE=$($SCRIPT/current-ns)
+echo "Starting RabbitMQ server on $K8S_NAMESPACE namespace"
+
+helm install --name rmq-$K8S_NAMESPACE --namespace $K8S_NAMESPACE \
+  --set rabbitmq.username=admin,rabbitmq.password=admin \
+  -f conf/rabbitmq-helm-values.yaml \
+  stable/rabbitmq

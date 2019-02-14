@@ -1,0 +1,16 @@
+#!/bin/bash
+set -eu
+
+K8S_NAMESPACE=${1:-First parameter is the namespace}
+RABBITMQ_MGT_PORT=${2:-Second parameter is the RabbitMQ management port}
+RABBITMQ_MGT_CREDENTIALS=${3:-Third parameter is <username>:<password> to access the management api}
+echo "Checking RabbitMQ server rmq-$K8S_NAMESPACE on port $RABBITMQ_MGT_PORT"
+
+# Check RabbitMQ helm chart status
+echo "RabbitMQ $(helm status rmq-$K8S_NAMESPACE -o json | jq .info.Description)"
+
+# Check Management UI is reachable
+tmpfile=$(mktemp /tmp/disaster-recovery-mgt-ui.XXXXXX)
+curl -s -u $RABBITMQ_MGT_CREDENTIALS http://127.0.0.1:$RABBITMQ_MGT_PORT/api/overview > $tmpfile
+
+echo "RabbitMQ cluster $(jq .cluster_name $tmpfile) running $(jq .rabbitmq_version $tmpfile)"
