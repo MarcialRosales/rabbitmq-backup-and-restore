@@ -11,16 +11,39 @@ In this scenario, we are going to:
 4. Transfer all messages -regardless on which queue they are- from main site to the dr site
 
 ## Get started
+
+**Get Kubernetes ready**
+We are going to deploy RabbitMQ and the applications on kubernetes. Check out the section [About Google Cloud Platform](#About-Google-Cloud-Platform) to get your local environment ready to operate with GCP tools.
+
+**Get helm ready**
+We are going to use this [Helm chart](https://github.com/helm/charts/blob/master/stable/rabbitmq) to deploy RabbitMQ. You can see what *stable* releases of this chart are available [here](https://console.cloud.google.com/storage/browser/kubernetes-charts?prefix=rabbitmq).
+
+  Before deploying the helm chart we are going to update the helm repositories so that it deploys the latest:
+  ```bash
+  helm repo update
+  ```
+
+**Deploy RabbitMQ cluster et al.**
 To deploy the scenario run the command
- ```
+ ```bash
  make deploy-all
  ```
- >Check out next section [Deploy RabbitMQ clusters](#Deploy-RabbitMQ-clusters) to get your local environment ready to operate with GCP tools
+
+It takes some time to get the cluster ready. Once it is ready we can see it by running:
+```bash
+helm list
+```
+```
+NAME     	REVISION	UPDATED                 	STATUS  	CHART         	NAMESPACE
+rmq-dr-site  	1       	Fri Jan 25 15:40:27 2019	DEPLOYED	rabbitmq-4.1.0	dr-site
+rmq-main-site	1       	Fri Jan 25 15:40:11 2019	DEPLOYED	rabbitmq-4.1.0	main-site
+```  
 
 This will deploy the 2 sites, with a RabbitMQ cluster on each site and one producer and one consumer application connected to the `main` site's RabbitMQ cluster only. There are no applications connected to the `dr` site just yet.
 
+**To delete everything when ready**
 Once you are done with this scenario you can delete everything with the following command:
-```
+```bash
 make destroy-all
 ```
 
@@ -83,7 +106,7 @@ Imagine a blue/green deployment where we prefer to move consumer applications an
   make stop-main-producer
   make start-dr-producer
   ```
-  
+
 5. Check the transfer has been completed and if so, stop it.
   ```
   make check-main-transfer
@@ -91,39 +114,6 @@ Imagine a blue/green deployment where we prefer to move consumer applications an
   ```
 
 If we wanted to move the messages back from dr to main site we use the corresponding commands `make start-dr-transfer`, `make check-dr-transfer`, `make stop-dr-transfer`.
-
-
-## Deploy RabbitMQ clusters
-
-1. We are going to deploy RabbitMQ in Kubernetes. Check out [About Google Cloud Platform](#About-Google-Cloud-Platform) section for instructions on how to get started.
-
-2. We are going to use this [Helm chart](https://github.com/helm/charts/blob/master/stable/rabbitmq) to deploy RabbitMQ. You can see what *stable* releases of this chart are available [here](https://console.cloud.google.com/storage/browser/kubernetes-charts?prefix=rabbitmq).
-
-  Before deploying the helm chart we are going to update the helm repositories so that it deploys the latest:
-  ```bash
-  helm repo update
-  ```
-3. We are deploying 2 RabbitMQ Clusters, `rmq-main-site` as the **main** site and  `rmq-dr-site` as the **DR** site.
-
-  Relevant [RabbitMQ configuration](/conf/rabbitmq-helm-values.yaml):
-  - RabbitMQ docker image `bitnami/rabbitmq` version 3.7.10
-  - 1 node cluster with *autoheal* cluster partition handling
-  - federation plugin installed
-  - Default credentials: admin/admin
-
-  ```
-  make deploy-all
-  ```
-
-  It takes some time to get the cluster ready. Once it is ready we can see it by running:
-  ```bash
-  helm list
-  ```
-  ```
-  NAME     	REVISION	UPDATED                 	STATUS  	CHART         	NAMESPACE
-  rmq-dr-site  	1       	Fri Jan 25 15:40:27 2019	DEPLOYED	rabbitmq-4.1.0	dr-site
-  rmq-main-site	1       	Fri Jan 25 15:40:11 2019	DEPLOYED	rabbitmq-4.1.0	main-site
-  ```  
 
 
 ## About Google Cloud Platform
