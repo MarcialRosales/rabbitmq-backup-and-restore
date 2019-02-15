@@ -64,22 +64,26 @@ Imagine a blue/green deployment where we prefer to move consumer applications an
   make start-main-producer
   ```
   Check in the [management ui](http://localhost:15672/#/login/admin/admin) of the main site that there are messages being published and consumed.
+
 2. Let's initiate blue/green deployment. Stop the consumer in the main site and start it in the dr site:
   ```
   make stop-main-consumer
   make start-dr-consumer
   ```
   Check in the [management ui](http://localhost:15673/#/login/admin/admin) of the dr site that we have a consumer
+
 3. Start transfer from main site to dr site
   ```
   make start-main-transfer
   ```
   Check messages are being consumed from main site
+
 4. Stop producer in the main site and start it on the dr site
   ```
   make stop-main-producer
   make start-dr-producer
   ```
+  
 5. Check the transfer has been completed and if so, stop it.
   ```
   make check-main-transfer
