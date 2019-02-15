@@ -76,6 +76,21 @@ If we want to see in action how to transfer messages we need to produce a messag
  make stop-main-transfer
  ```
 
+At this point, we can proceed with the upgrade of the main site without being worried about the messages.
+
+**NOTE**: We are not backing up all the definitions, we are only transferring messages !!!
+
+Once the main site is ready, we can move the messages back to the main site.
+1. Transfer messages from dr
+  ```
+  make start-dr-transfer
+  ```
+2. Check the transfer has completed and stop it afterwards
+  ```
+  make check-dr-transfer 
+  make stop-dr-transfer
+  ```
+
 ## Let's simulate a typical blue/green deployment
 To transfer messages from one cluster to another we used [Shovel plugin](https://www.rabbitmq.com/shovel.html). We can configure the **shovel plugin** to delete itself when it empties the source queue. This is pretty convenient because we don't need to delete them however we have to be certain there wont be further messages coming in.
 
