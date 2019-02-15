@@ -36,6 +36,12 @@ spec:
           - --auto-delete
           - "false"
           - --uri
-          - amqp://admin:admin@rmq-main-rabbitmq:5672
+          - $(RABBITMQ_AMQP_URI)
+        env:
+        - name: RABBITMQ_AMQP_URI
+          valueFrom:
+            configMapKeyRef:
+              name: producer-config
+              key: RABBITMQ_AMQP_URI
         ports:
         - containerPort: 8080  # for prometheus exporter

@@ -62,7 +62,7 @@ rabbitmq:
 
   ## Plugins to enable
   plugins: |-
-      [rabbitmq_management, rabbitmq_peer_discovery_k8s, rabbitmq_federation, rabbitmq_federation_management].
+      [rabbitmq_management, rabbitmq_peer_discovery_k8s, rabbitmq_federation, rabbitmq_federation_management, rabbitmq_shovel, rabbitmq_shovel_management].
 
   ## Clustering settings
   clustering:
@@ -147,7 +147,7 @@ resources:
     cpu: 100m
 
 ## Replica count, set to 3 to provide a default available cluster
-replicas: 1
+replicas: 2
 
 ## Node labels and tolerations for pod assignment
 ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
