@@ -1,15 +1,19 @@
-# Scenario 1 - Backup a vhost on RabbitMQ cluster onto another vhost on another RabbitMQ cluster running in GCP
+# Scenario 1 - Backup a vhost onto another vhost on another RabbitMQ cluster running in GCP
 
-We want to move all the messages from a vhost on RabbitMQ cluster onto another another RabbitMQ cluster. The reasons why we need to do that are not important but imagine that we are upgrading the former RabbitMQ cluster and we do not want to take any chances should it failed. Hence we move all the messages to a **backup** RabbitMQ cluster until we complete the upgrade and then we move back all the messages from the **backup** RabbitMQ cluster to the former cluster.
+## Introduction
+We want to move all the messages from a vhost on RabbitMQ cluster onto another another RabbitMQ cluster. The reasons why we need to do that are not important but imagine that we are upgrading a RabbitMQ cluster and we do not want to take any chances with the messages should the upgrade failed. Therefore, the first thing we do is to move all the messages to a **backup** RabbitMQ cluster until we complete the upgrade and then we move back all the messages from the **backup** RabbitMQ cluster to the former cluster.
 
-In this scenario we are going to demonstrate the following:
+## What we are going to
+In this scenario, we are going to:
 1. Deploy 2 RabbitMQ clusters on Kubernetes. Each cluster will be deployed on a separate namespace representing an hypothetical site. The sites/namespaces are `main-site` and `dr-site`
-2. Deploy consumer and producer application so that we produce and consume messages to/from any site
+2. Deploy a consumer and producer application so that we produce and consume messages to/from any site
 3. Produce a backlog of messages
-4. Transfer messages from main site to the dr site
+4. Transfer all messages -regardless on which queue they are- from main site to the dr site
 
+## Get started
 To deploy the scenario run the command `make deploy-all` (Check out next section [Deploy RabbitMQ clusters](#Deploy-RabbitMQ-clusters) to get your local environment ready to operate with GCP tools). This will deploy the 2 sites, with a RabbitMQ cluster on each site and one producer and one consumer application connected to the `main` site's RabbitMQ cluster only. There are no applications connected to the `dr` site just yet.
 
+## Let's transfer messages from main to dr site
 If we want to see in action how to transfer messages we need to produce a message backlog. For that, we stop the consumer app and then producer app. The lag between stopping both will produce enough messages to demonstrate how to transfer those messages.
 1. Stop the consumer application: `make stop-main-consumer`
 2. Stop the producer application: `make stop-main-producer`
@@ -17,16 +21,18 @@ If we want to see in action how to transfer messages we need to produce a messag
 4. Check how the transfer is going: `make check-main-transfer`
 5. Terminate the transfer when there are no messages left: `make stop-main-transfer`
 
-To transfer messages from one cluster to another we used [Shovel plugin](https://www.rabbitmq.com/shovel.html). We can configure the shovel to delete itself when it empties the source queue. This is pretty convenient unless we know that there won't be further messages coming in onto the queue. Imagine a situation where we are transferring all the messages but we leave some producer applications running. It could happen that the shovel terminates and deletes itself and later on a message comes in from those publisher applications. For this reason, we preferred to leave the decision to delete the shovel to the operator/end-user.
+## Let's simulate a typical blue/green deployment
+To transfer messages from one cluster to another we used [Shovel plugin](https://www.rabbitmq.com/shovel.html). We can configure the **shovel plugin** to delete itself when it empties the source queue. This is pretty convenient because we don't need to delete them however we have to be certain there wont be further messages coming in.
 
-To demonstrate this last situation we just described follow this steps:
-1. Start the producer and consumer apps in the main site:
+Imagine a blue/green deployment where we prefer to move consumer applications and then producers. In this scenario, producers will be until the last minute publishing messages. Furthermore, we do not want to wait until publisher applications are moved to start transferring messages. So the sequence is as follows:
+
+1. Let's bring up the "blue" deployment on the main site. Start the producer and consumer apps in the main site:
   ```
   make start-main-consumer
   make start-main-producer
   ```
   Check in the [management ui](http://localhost:15672/#/login/admin/admin) of the main site that there are messages being published and consumed.
-2. Stop the consumer in the main site and start it in the dr site:
+2. Let's initiate blue/green deployment. Stop the consumer in the main site and start it in the dr site:
   ```
   make stop-main-consumer
   make start-dr-consumer
@@ -49,7 +55,6 @@ To demonstrate this last situation we just described follow this steps:
   ```
 
 If we wanted to move the messages back from dr to main site we use the corresponding commands `make start-dr-transfer`, `make check-dr-transfer`, `make stop-dr-transfer`.
-
 
 
 ## Deploy RabbitMQ clusters
