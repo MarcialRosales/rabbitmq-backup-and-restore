@@ -15,9 +15,19 @@ To deploy the scenario run the command
  ```
  make deploy-all
  ```
- >Check out next section [Deploy RabbitMQ clusters](#Deploy-RabbitMQ-clusters) to get your local environment ready to operate with GCP tools)
+ >Check out next section [Deploy RabbitMQ clusters](#Deploy-RabbitMQ-clusters) to get your local environment ready to operate with GCP tools
 
 This will deploy the 2 sites, with a RabbitMQ cluster on each site and one producer and one consumer application connected to the `main` site's RabbitMQ cluster only. There are no applications connected to the `dr` site just yet.
+
+Once you are done with this scenario you can delete everything with the following command:
+```
+make destroy-all
+```
+
+To know all the available actions/commands simply run:
+```
+make
+```
 
 ## Let's transfer messages from main to dr site
 If we want to see in action how to transfer messages we need to produce a message backlog. For that, we stop the consumer app and then producer app. The lag between stopping both will produce enough messages to demonstrate how to transfer those messages.
