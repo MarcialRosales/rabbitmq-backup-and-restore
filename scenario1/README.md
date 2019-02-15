@@ -12,10 +12,10 @@ In this scenario, we are going to:
 
 ## Get started
 
-**Get Kubernetes ready**
+### Get Kubernetes ready
 We are going to deploy RabbitMQ and the applications on kubernetes. Check out the section [About Google Cloud Platform](#About-Google-Cloud-Platform) to get your local environment ready to operate with GCP tools.
 
-**Get helm ready**
+### Get helm ready
 We are going to use this [Helm chart](https://github.com/helm/charts/blob/master/stable/rabbitmq) to deploy RabbitMQ. You can see what *stable* releases of this chart are available [here](https://console.cloud.google.com/storage/browser/kubernetes-charts?prefix=rabbitmq).
 
   Before deploying the helm chart we are going to update the helm repositories so that it deploys the latest:
@@ -23,7 +23,7 @@ We are going to use this [Helm chart](https://github.com/helm/charts/blob/master
   helm repo update
   ```
 
-**Deploy RabbitMQ cluster et al.**
+### Deploy RabbitMQ cluster et al.
 To deploy the scenario run the command
  ```bash
  make deploy-all
@@ -41,7 +41,7 @@ rmq-main-site	1       	Fri Jan 25 15:40:11 2019	DEPLOYED	rabbitmq-4.1.0	main-sit
 
 This will deploy the 2 sites, with a RabbitMQ cluster on each site and one producer and one consumer application connected to the `main` site's RabbitMQ cluster only. There are no applications connected to the `dr` site just yet.
 
-**To delete everything when ready**
+### To delete everything when ready
 Once you are done with this scenario you can delete everything with the following command:
 ```bash
 make destroy-all
