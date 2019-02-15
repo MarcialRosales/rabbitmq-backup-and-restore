@@ -31,11 +31,27 @@ make
 
 ## Let's transfer messages from main to dr site
 If we want to see in action how to transfer messages we need to produce a message backlog. For that, we stop the consumer app and then producer app. The lag between stopping both will produce enough messages to demonstrate how to transfer those messages.
-1. Stop the consumer application: `make stop-main-consumer`
-2. Stop the producer application: `make stop-main-producer`
-3. Transfer messages: `make start-main-transfer`
-4. Check how the transfer is going: `make check-main-transfer`
-5. Terminate the transfer when there are no messages left: `make stop-main-transfer`
+
+1. Stop the consumer application
+ ```
+ make stop-main-consumer
+ ```
+2. Stop the producer application
+ ```
+ make stop-main-producer
+ ```
+3. Transfer messages
+ ```
+ make start-main-transfer
+ ```
+4. Check how the transfer is going
+ ```
+ make check-main-transfer
+ ```
+5. Terminate the transfer when there are no messages left
+ ```
+ make stop-main-transfer
+ ```
 
 ## Let's simulate a typical blue/green deployment
 To transfer messages from one cluster to another we used [Shovel plugin](https://www.rabbitmq.com/shovel.html). We can configure the **shovel plugin** to delete itself when it empties the source queue. This is pretty convenient because we don't need to delete them however we have to be certain there wont be further messages coming in.
