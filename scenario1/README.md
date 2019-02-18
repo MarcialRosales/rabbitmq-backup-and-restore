@@ -1,19 +1,33 @@
 # Scenario 1 - Backup a vhost onto another vhost on another RabbitMQ cluster running in GCP
 
+Table of Content
+
+- [Introduction](#Introduction)  
+- [What we are going to](#what-we-are-going-to-do)  
+- [Getting started](#Getting-started)  
+- [Getting started](#Getting-started)  
+  - [Get Kubernetes ready](#Get-Kubernetes-ready)  
+  - [Get helm ready](#Get-helm-ready)
+- [Deploy RabbitMQ cluster et al.](#Deploy-RabbitMQ-cluster-et-al.)
+- [Let's transfer messages from main to dr site](#Let's transfer messages from main to dr site)
+- [Let's simulate a typical blue/green deployment](#Let's simulate a typical blue/green deployment)
+- [Using the scripts outside of this repository]()
+- [Getting started with Google Cloud Platform]()
+
 ## Introduction
 We want to move all the messages from a vhost on RabbitMQ cluster onto another another RabbitMQ cluster. The reasons why we need to do that are not important but imagine that we are upgrading a RabbitMQ cluster and we do not want to take any chances with the messages should the upgrade failed. Therefore, the first thing we do is to move all the messages to a **backup** RabbitMQ cluster until we complete the upgrade and then we move back all the messages from the **backup** RabbitMQ cluster to the former cluster.
 
-## What we are going to
+## What we are going to do
 In this scenario, we are going to:
 1. Deploy 2 RabbitMQ clusters on Kubernetes. Each cluster will be deployed on a separate namespace representing an hypothetical site. The sites/namespaces are `main-site` and `dr-site`
 2. Deploy a consumer and producer application so that we produce and consume messages to/from any site
 3. Produce a backlog of messages
 4. Transfer all messages -regardless on which queue they are- from main site to the dr site
 
-## Get started
+## Getting started
 
 ### Get Kubernetes ready
-We are going to deploy RabbitMQ and the applications on kubernetes. Check out the section [About Google Cloud Platform](#About-Google-Cloud-Platform) to get your local environment ready to operate with GCP tools.
+We are going to deploy RabbitMQ and the applications on kubernetes. Check out the section [Getting started with Google Cloud Platform](#Getting-started-with-Google-Cloud-Platform) to get your local environment ready to operate with GCP tools.
 
 ### Get helm ready
 We are going to use this [Helm chart](https://github.com/helm/charts/blob/master/stable/rabbitmq) to deploy RabbitMQ. You can see what *stable* releases of this chart are available [here](https://console.cloud.google.com/storage/browser/kubernetes-charts?prefix=rabbitmq).
@@ -23,7 +37,7 @@ We are going to use this [Helm chart](https://github.com/helm/charts/blob/master
   helm repo update
   ```
 
-### Deploy RabbitMQ cluster et al.
+## Deploy RabbitMQ cluster et al.
 To deploy the scenario run the following command:
 ```bash
 make deploy-all
@@ -89,7 +103,6 @@ $ kubectl get deployments
 No resources found.
 ```
 
-
 ### To delete everything when ready
 Once you are done with this scenario you can delete everything with the following command:
 ```bash
@@ -105,6 +118,8 @@ make
 If we want to see in action how to transfer messages we need to produce a message backlog. For that, we stop the consumer app and then producer app. The lag between stopping both will produce enough messages to demonstrate how to transfer those messages.
 
 > We use RabbitMQ PerfTest to deploy the consumer and producer applications. They have been configured to publish/consume to/from 10 queues. The producer will publish a message every second.
+
+**Important note about shovel**: We are using [Shovel plugin](https://www.rabbitmq.com/shovel.html) to transfer messages. We need to create a **shovel** per queue and a unique name within the **vhost** where we create it. The tool we have created assumes there are no shovels in the vhost.
 
 1. Stop the consumer application
  ```
@@ -183,7 +198,7 @@ Deleted shovel perf-test-010
 
 At this point, we can proceed with the upgrade of the main site without being worried about the messages.
 
-**NOTE 1**: We are not backing up all the definitions, we are only transferring messages !!! You are wondering if we need to declare the queue(s) in the target cluster (e.g. `dr-site` cluster) before moving the messages. The answer is that shovel will take care of that. It will create a queue in the target cluster with the same definition as the source queue. This will not happen with federated queues though.
+**NOTE about backing up definitions**: We are not backing up all the definitions, we are only transferring messages !!! You are wondering if we need to declare the queue(s) in the target cluster (e.g. `dr-site` cluster) before moving the messages. The answer is that shovel will take care of that. It will create a queue in the target cluster with the same definition as the source queue. This will not happen with federated queues though.
 
 Once the main site is ready, we can move the messages back to the main site.
 1. Transfer messages from `dr-site`
@@ -251,7 +266,7 @@ start-transfer.py --source-http $(MAIN_MGT_URL) --target-http $(DR_MGT_URL) --so
 ```
 
 
-## About Google Cloud Platform
+## Getting started with Google Cloud Platform
 
 ### Get the tools
 We are going to operate via command-line, not via the UI. For this reason, we need to install `gcloud`, `kubectl` and `helm`.
