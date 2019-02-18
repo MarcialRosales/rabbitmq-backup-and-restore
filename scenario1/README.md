@@ -5,7 +5,6 @@
 - [Introduction](#Introduction)  
 - [What we are going to](#what-we-are-going-to-do)  
 - [Getting started](#Getting-started)  
-- [Getting started](#Getting-started)  
   - [Get Kubernetes ready](#Get-Kubernetes-ready)  
   - [Get helm ready](#Get-helm-ready)
 - [Deploy RabbitMQ cluster et al.](#deploy-rabbitmq-cluster-et-al)
