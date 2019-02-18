@@ -30,13 +30,15 @@ This scenario will use the [Shovel plugin](https://www.rabbitmq.com/shovel.html)
 
 In terms of roles and/or permissions we need:
 
-A **RabbitMQ user** with, at least, the *user tag* [policymaker](https://www.rabbitmq.com/management.html#permissions) with access to the *vhost* in the RabbitMQ  Cluster where we are going to set the shovel. This *user tag* allows the user to set [Per-vhost parameters](https://www.rabbitmq.com/parameters.html#parameter-management) required to set up shovel.
+A **RabbitMQ user** called `br_user` with, at least, the *user tag* [policymaker](https://www.rabbitmq.com/management.html#permissions) with access to the *vhost* in the RabbitMQ  Cluster where we are going to set the shovel. This *user tag* allows the user to set [Per-vhost parameters](https://www.rabbitmq.com/parameters.html#parameter-management) required to set up shovel.
 Additionally, we need to grant *user tag* `monitoring` so that this user can check the status of the shovel.  
 We can set the shovel in either cluster, the source or the target. In this scenario, we have chosen to set the shovel in the source cluster.
 
-And we also need a **RabbitMQ user** with permissions to [configure](https://www.rabbitmq.com/access-control.html) and [write](https://www.rabbitmq.com/access-control.html) to any queue in the target *vhost* / RabbitMQ Cluster.
+The `br_user` will also need permissions to [configure](https://www.rabbitmq.com/access-control.html) and [write](https://www.rabbitmq.com/access-control.html) from any queue in the target *vhost* / RabbitMQ Cluster.
 
-We will automatically create a user (called `br-user`) with the above requirements. Therefore, both RabbitMQ Clusters will have at least the `admin`:`admin` user with *user tag* `administrator` and `br-user` with the *user tag* `policymaker`.
+We will automatically create this  `br_user` user with the above requirements in both clusters. Therefore, both RabbitMQ Clusters will have at least the `admin`:`admin` user with *user tag* `administrator` and `br-user` with the *user tag* `policymaker`.
+
+Additionally, we have created separate users for the consumer and producer applications.
 
 ## Getting started
 
@@ -173,6 +175,7 @@ If we want to see in action how to transfer messages we need to produce a messag
   Creating Shovel for queue perf-test-010
   ```
   We can monitor the shovels in the management ui too:
+  
   ![shovel status](assets/shovel-status.png)
 
 4. Check how the transfer is going
