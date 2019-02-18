@@ -25,9 +25,9 @@ We are going to use this [Helm chart](https://github.com/helm/charts/blob/master
 
 ### Deploy RabbitMQ cluster et al.
 To deploy the scenario run the command
- ```bash
- make deploy-all
- ```
+```bash
+make deploy-all
+```
 
 It takes some time to get the cluster ready. Once it is ready we can see it by running:
 ```bash
@@ -38,8 +38,6 @@ NAME     	REVISION	UPDATED                 	STATUS  	CHART         	NAMESPACE
 rmq-dr-site  	1       	Fri Jan 25 15:40:27 2019	DEPLOYED	rabbitmq-4.1.0	dr-site
 rmq-main-site	1       	Fri Jan 25 15:40:11 2019	DEPLOYED	rabbitmq-4.1.0	main-site
 ```  
-
-This will deploy the 2 sites, with a RabbitMQ cluster on each site and one producer and one consumer application connected to the `main` site's RabbitMQ cluster only. There are no applications connected to the `dr` site just yet.
 
 If you want to use `kubectl` to see services, deployments and pods, we have facilitated 2 scripts to conveniently switch between sites/namespaces. See below:
 
@@ -54,10 +52,43 @@ Switching to main-site
 Context "gke_cf-rabbitmq_europe-west1-c_cluster-1" modified.
 ```
 
-```bash 
+```bash
 $ bin/current-ns
 main-site
 ```
+
+
+This will deploy the 2 sites, with a RabbitMQ cluster on each site. See below:
+```bash
+$ bin/switch-ns main-site
+$ kubectl get services
+```
+```
+NAME                              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                          AGE
+rmq-main-site-rabbitmq            ClusterIP   10.47.242.116   <none>        4369/TCP,5672/TCP,25672/TCP,15672/TCP,9090/TCP   2d
+rmq-main-site-rabbitmq-headless   ClusterIP   None            <none>        4369/TCP,5672/TCP,25672/TCP,15672/TCP            2d
+```
+
+
+And one producer and one consumer application connected to the `main` site's RabbitMQ cluster only.
+```bash
+$ kubectl get deployments
+```
+```
+NAME          DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+tx-producer   1         1         1            1           2d
+tx-consumer   1         1         1            1           2d
+```
+
+There are no applications connected to the `dr` site just yet.
+```bash
+$ bin/switch-ns dr-site
+$ kubectl get deployments
+```
+```
+No resources found.
+```
+
 
 ### To delete everything when ready
 Once you are done with this scenario you can delete everything with the following command:
