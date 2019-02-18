@@ -1,6 +1,6 @@
 # Scenario 1 - Backup a vhost onto another vhost on another RabbitMQ cluster running in GCP
 
-Table of Content
+**Table of Content**
 
 - [Introduction](#Introduction)  
 - [What we are going to](#what-we-are-going-to-do)  
@@ -8,11 +8,11 @@ Table of Content
 - [Getting started](#Getting-started)  
   - [Get Kubernetes ready](#Get-Kubernetes-ready)  
   - [Get helm ready](#Get-helm-ready)
-- [Deploy RabbitMQ cluster et al.](#Deploy-RabbitMQ-cluster-et-al.)
-- [Let's transfer messages from main to dr site](#Let's transfer messages from main to dr site)
-- [Let's simulate a typical blue/green deployment](#Let's simulate a typical blue/green deployment)
-- [Using the scripts outside of this repository]()
-- [Getting started with Google Cloud Platform]()
+- [Deploy RabbitMQ cluster et al.](#deploy-rabbitmq-cluster-et-al)
+- [Let's transfer messages from main to dr site](#lets-transfer-messages-from-main-to-dr-site)
+- [Let's simulate a typical blue/green deployment](#lets-simulate-a-typical-bluegreen-deployment)
+- [Using the scripts outside of this repository](#using-the-scripts-outside-of-this-repository)
+- [Getting started with Google Cloud Platform](#getting-started-with-google-cloud-platform)
 
 ## Introduction
 We want to move all the messages from a vhost on RabbitMQ cluster onto another another RabbitMQ cluster. The reasons why we need to do that are not important but imagine that we are upgrading a RabbitMQ cluster and we do not want to take any chances with the messages should the upgrade failed. Therefore, the first thing we do is to move all the messages to a **backup** RabbitMQ cluster until we complete the upgrade and then we move back all the messages from the **backup** RabbitMQ cluster to the former cluster.
