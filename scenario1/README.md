@@ -175,7 +175,7 @@ If we want to see in action how to transfer messages we need to produce a messag
   Creating Shovel for queue perf-test-010
   ```
   We can monitor the shovels in the management ui too:
-  
+
   ![shovel status](assets/shovel-status.png)
 
 4. Check how the transfer is going
@@ -278,12 +278,14 @@ To transfer messages from cluster **A** to cluster **B**, first of all you need 
 To start transferring messages you invoke the following command:
 ```
 MAIN_MGT_URL= <put here the mgt uri of the source cluster in the form  http[s]://username:password@hostname:port >
-DR_MGT_URL= < put here the mgt uri of the target clster >
-MAIN_AMQP_URL = < put here the amqp uri of the source cluster in the form amqp[s]://username:password@hostname:port >
 DR_AMQP_URL = <put here the amqp uri of the target cluster >
+SOURCE_VHOST = <by default it is %2F >
+TARGET_VHOST = <by default it is %2F >
 
-start-transfer.py --source-http $(MAIN_MGT_URL) --target-http $(DR_MGT_URL) --source-amqp $(MAIN_AMQP_URL) --target-amqp $(DR_AMQP_URL)
+start-transfer.py --source-http $(MAIN_MGT_URL) --target-amqp $(DR_AMQP_URL)
+                [--source-vhost $(SOURCE_VHOST)] [--target-vhost $(TARGET_VHOST)]
 ```
+
 
 
 ## Getting started with Google Cloud Platform
