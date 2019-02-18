@@ -41,6 +41,24 @@ rmq-main-site	1       	Fri Jan 25 15:40:11 2019	DEPLOYED	rabbitmq-4.1.0	main-sit
 
 This will deploy the 2 sites, with a RabbitMQ cluster on each site and one producer and one consumer application connected to the `main` site's RabbitMQ cluster only. There are no applications connected to the `dr` site just yet.
 
+If you want to use `kubectl` to see services, deployments and pods, we have facilitated 2 scripts to conveniently switch between sites/namespaces. See below:
+
+```bash
+$ bin/current-ns
+dr-site
+```
+
+```bash
+$ bin/switch-ns
+Switching to main-site
+Context "gke_cf-rabbitmq_europe-west1-c_cluster-1" modified.
+```
+
+```bash 
+$ bin/current-ns
+main-site
+```
+
 ### To delete everything when ready
 Once you are done with this scenario you can delete everything with the following command:
 ```bash
@@ -87,7 +105,7 @@ Once the main site is ready, we can move the messages back to the main site.
   ```
 2. Check the transfer has completed and stop it afterwards
   ```
-  make check-dr-transfer 
+  make check-dr-transfer
   make stop-dr-transfer
   ```
 
