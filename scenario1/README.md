@@ -4,6 +4,7 @@
 
 - [Introduction](#Introduction)  
 - [What we are going to](#what-we-are-going-to-do)  
+- [Roles and responsibilities](#roles-and-responsibilities)
 - [Getting started](#Getting-started)  
   - [Get Kubernetes ready](#Get-Kubernetes-ready)  
   - [Get helm ready](#Get-helm-ready)
@@ -22,6 +23,20 @@ In this scenario, we are going to:
 2. Deploy a consumer and producer application so that we produce and consume messages to/from any site
 3. Produce a backlog of messages
 4. Transfer all messages -regardless on which queue they are- from main site to the dr site
+
+This scenario will use the [Shovel plugin](https://www.rabbitmq.com/shovel.html) to move messages between clusters. To use this plugin we need to set [Per-vhost parameters](https://www.rabbitmq.com/parameters.html#parameter-management).
+
+## Roles and responsibilities
+
+In terms of roles and/or permissions we need:
+
+A **RabbitMQ user** with, at least, the *user tag* [policymaker](https://www.rabbitmq.com/management.html#permissions) with access to the *vhost* in the RabbitMQ  Cluster where we are going to set the shovel. This *user tag* allows the user to set [Per-vhost parameters](https://www.rabbitmq.com/parameters.html#parameter-management) required to set up shovel.
+Additionally, we need to grant *user tag* `monitoring` so that this user can check the status of the shovel.  
+We can set the shovel in either cluster, the source or the target. In this scenario, we have chosen to set the shovel in the source cluster.
+
+And we also need a **RabbitMQ user** with permissions to [configure](https://www.rabbitmq.com/access-control.html) and [write](https://www.rabbitmq.com/access-control.html) to any queue in the target *vhost* / RabbitMQ Cluster.
+
+We will automatically create a user (called `br-user`) with the above requirements. Therefore, both RabbitMQ Clusters will have at least the `admin`:`admin` user with *user tag* `administrator` and `br-user` with the *user tag* `policymaker`.
 
 ## Getting started
 
@@ -135,28 +150,31 @@ If we want to see in action how to transfer messages we need to produce a messag
  It should print out something like this:
  ```
  Transfer messages [vhost %2F at http://admin:admin@localhost:15672] -> [vhost %2F at http://admin:admin@localhost:15673]
-Detected following non-empty queues:
- - perf-test-001 (925)
- - perf-test-002 (925)
- - perf-test-003 (925)
- - perf-test-004 (925)
- - perf-test-005 (924)
- - perf-test-006 (924)
- - perf-test-007 (924)
- - perf-test-008 (924)
- - perf-test-009 (924)
- - perf-test-010 (924)
-Creating Shovel for queue perf-test-001
-Creating Shovel for queue perf-test-002
-Creating Shovel for queue perf-test-003
-Creating Shovel for queue perf-test-004
-Creating Shovel for queue perf-test-005
-Creating Shovel for queue perf-test-006
-Creating Shovel for queue perf-test-007
-Creating Shovel for queue perf-test-008
-Creating Shovel for queue perf-test-009
-Creating Shovel for queue perf-test-010
-```
+  Detected following non-empty queues:
+   - perf-test-001 (925)
+   - perf-test-002 (925)
+   - perf-test-003 (925)
+   - perf-test-004 (925)
+   - perf-test-005 (924)
+   - perf-test-006 (924)
+   - perf-test-007 (924)
+   - perf-test-008 (924)
+   - perf-test-009 (924)
+   - perf-test-010 (924)
+  Creating Shovel for queue perf-test-001
+  Creating Shovel for queue perf-test-002
+  Creating Shovel for queue perf-test-003
+  Creating Shovel for queue perf-test-004
+  Creating Shovel for queue perf-test-005
+  Creating Shovel for queue perf-test-006
+  Creating Shovel for queue perf-test-007
+  Creating Shovel for queue perf-test-008
+  Creating Shovel for queue perf-test-009
+  Creating Shovel for queue perf-test-010
+  ```
+  We can monitor the shovels in the management ui too:
+  ![shovel status](assets/shovel-status.png)
+
 4. Check how the transfer is going
  ```bash
  make check-main-transfer

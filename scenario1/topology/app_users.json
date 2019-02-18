@@ -1,0 +1,10 @@
+{
+  "users":[
+    {"name":"consumer","password_hash":"5/DRFNGpHmDy/Qrq3dG9YLgGD5ZjpkcU0ZCnyLGU740+Jtdo","hashing_algorithm":"rabbit_password_hashing_sha256","tags":"management"},
+    {"name":"producer","password_hash":"AIPxZCl3owVCFXYbkN4aAxuUUt8pBAbBkBQea1stPcVmFmDJ","hashing_algorithm":"rabbit_password_hashing_sha256","tags":"management"}
+  ],
+  "permissions":[
+    {"user":"consumer","vhost":"/","configure":".*","write":".*","read":".*"},
+    {"user":"producer","vhost":"/","configure":".*","write":".*","read":".*"}
+  ]
+}

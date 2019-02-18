@@ -56,12 +56,13 @@ def remove_credentials_from_url(uri):
     p = re.compile('.*\/\/(.*)@.*')
     return uri.replace('%s@' % p.findall(uri)[0], '')
 
-def start_transfer(source_http, source_vhost, source_amqp, target_http, target_vhost, target_amqp):
-    print "Transfer messages [vhost %s at %s] -> [vhost %s at %s]" % (source_vhost, source_http, target_vhost, target_http)
+def start_transfer(source_http, source_vhost, target_vhost, target_amqp):
+    source_amqp = 'amqp://'
+    print "Transfer messages [vhost %s at %s] -> [vhost %s at %s]" % (source_vhost, source_amqp, target_vhost, target_amqp)
+    print " Setting up shovel at [vhost %s at %s]" % (source_vhost, source_http)
 
     source_credentials = extract_credentials(source_http)
     source_base_url = remove_credentials_from_url(source_http)
-    target_http = remove_credentials_from_url(target_http)
 
     queuesToMigrate = find_queues_with_messages(source_base_url, source_credentials, source_vhost)
     if len(queuesToMigrate) < 1:
@@ -79,7 +80,9 @@ def check_transfer(http, vhost):
     queuesToMigrate = find_queues_with_messages(source_base_url, source_credentials, vhost)
     if len(queuesToMigrate) > 0:
         print "Transfer has not complete yet. There are %d queues with content" % (len(queuesToMigrate))
-        exit -1
+        exit();
+    else:
+        print "There are no queues with messages"
 
     resp = get_from(source_base_url, source_credentials, shovels(vhost))
     list_of_shovels = json.load(resp)
@@ -127,10 +130,6 @@ def stop_transfer(source_http, source_vhost):
         delete_from(source_base_url, source_credentials, shovel_parameter(source_vhost, s["name"]))
         print "Deleted shovel %s " % (s["name"])
 
-
-def hello():
-    print "hello"
-
 def shovel(base_url, credentials, vhost, queuesToMigrate, source_amqp, target_amqp):
     for queue in queuesToMigrate:
         print "Creating Shovel for queue %s " % (queue)
@@ -145,33 +144,3 @@ def shovel(base_url, credentials, vhost, queuesToMigrate, source_amqp, target_am
             }
         }
         resp = put_into(base_url, credentials, shovel_parameter(vhost, queue), json.dumps(shovelConfig))
-
-def wait_until_all_shovels_complete(base_url, credentials, vhost):
-    shovelsAtWork = True
-    while shovelsAtWork:
-
-        resp = get_from(base_url, credentials, shovels(vhost))
-        list_of_shovels = json.load(resp)
-
-        shovelsAtWork = False
-        shovelsInAction = 0;
-        for s in list_of_shovels :
-            if s["state"] <> "terminated" :
-                shovelsAtWork = True
-                shovelsInAction += 1;
-
-        if shovelsAtWork :
-            print 'Still migrating %d queues ' % (shovelsInAction)
-            sys.stdout.flush()
-            time.sleep( monitorShovelIntervalSec )
-
-    print 'All shovels have completed'
-
-def assert_all_queues_are_empty_or_fail(base_url, credentials, vhost):
-
-    queuesToMigrate = find_queues_with_messages(base_url, credentials, vhost)
-
-    if len(queuesToMigrate) > 0:
-        print "Transfer did not complete. There are %d queues with content" % (len(queuesToMigrate))
-        exit -1
-    else: print "Transfer Completed "

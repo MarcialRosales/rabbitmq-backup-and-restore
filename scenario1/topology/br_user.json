@@ -1,0 +1,12 @@
+{
+    "users":[
+        {"name":"br_user",
+            "password_hash":"wOk8WeASCJdHRxxGE8il0U2W2ZV3yebFXjBQolA95EFo7ENL",
+            "hashing_algorithm":"rabbit_password_hashing_sha256",
+            "tags":"policymaker, monitoring"
+        }
+    ],
+    "permissions":[
+        {"user":"br_user","vhost":"/","configure":".*","write":".*","read":".*"}
+    ]
+}

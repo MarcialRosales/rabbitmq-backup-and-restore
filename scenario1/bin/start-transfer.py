@@ -32,8 +32,8 @@ def main(argv):
     try:
       opts, args = getopt.getopt(argv,"",[
       "h" ,
-      "source-http=", "target-http=",
-      "source-amqp=", "target-amqp=",
+      "source-http=",
+      "target-amqp=",
       "source-vhost=", "target-vhost=" ])
 
     except getopt.GetoptError:
@@ -45,10 +45,6 @@ def main(argv):
          sys.exit()
       elif opt in ("--source-http"):
          source_http = arg
-      elif opt in ("--target-http"):
-         target_http = arg
-      elif opt in ("--source-amqp"):
-         source_amqp = arg
       elif opt in ("--target-amqp"):
          target_amqp = arg
       elif opt in ("--source-vhost"):
@@ -56,7 +52,7 @@ def main(argv):
       elif opt in ("--target-vhost"):
          target_vhost = arg
 
-    start_transfer(source_http, source_vhost, source_amqp, target_http, target_vhost, target_amqp)
+    start_transfer(source_http, source_vhost, target_vhost, target_amqp)
 
 
 main(sys.argv[1:])
