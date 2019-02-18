@@ -18,20 +18,24 @@ spec:
       - name: tx-producer
         image: pivotalrabbitmq/perf-test:latest
         args:
+          - --queue-pattern
+          - "perf-test-%03d"
           - --producers
+          - "10"
+          - --queue-pattern-from
           - "1"
+          - --queue-pattern-to
+          - "10"
           - --consumers
           - "0"
           - --rate
-          - "5"
+          - "1"
           - --confirm
           - "10"
           - --flag
           - persistent
           - --exchange
           - incoming-transaction
-          - --queue
-          - transactions
           - --metrics-prometheus
           - --auto-delete
           - "false"

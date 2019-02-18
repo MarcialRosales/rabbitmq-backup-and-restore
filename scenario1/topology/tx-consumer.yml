@@ -18,16 +18,20 @@ spec:
       - name: tx-consumer
         image: pivotalrabbitmq/perf-test:latest
         args:
+          - --queue-pattern
+          - "perf-test-%03d"
           - --producers
           - "0"
-          - --consumers
+          - --queue-pattern-from
           - "1"
+          - --queue-pattern-to
+          - "10"
+          - --consumers
+          - "10"
           - --flag
           - persistent
           - --exchange
           - incoming-transaction
-          - --queue
-          - transactions
           - --metrics-prometheus
           - --auto-delete
           - "false"

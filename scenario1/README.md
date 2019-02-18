@@ -24,7 +24,7 @@ We are going to use this [Helm chart](https://github.com/helm/charts/blob/master
   ```
 
 ### Deploy RabbitMQ cluster et al.
-To deploy the scenario run the command
+To deploy the scenario run the following command:
 ```bash
 make deploy-all
 ```
@@ -58,7 +58,7 @@ main-site
 ```
 
 
-This will deploy the 2 sites, with a RabbitMQ cluster on each site. See below:
+Let's find out what we have deployed with the command `make deploy-all`. It deployed the 2 sites, with a RabbitMQ cluster on each site. See below:
 ```bash
 $ bin/switch-ns main-site
 $ kubectl get services
@@ -70,7 +70,7 @@ rmq-main-site-rabbitmq-headless   ClusterIP   None            <none>        4369
 ```
 
 
-And one producer and one consumer application connected to the `main` site's RabbitMQ cluster only.
+It also deployed one producer and one consumer application on the `main-site` connected to the local RabbitMQ cluster.
 ```bash
 $ kubectl get deployments
 ```
@@ -80,7 +80,7 @@ tx-producer   1         1         1            1           2d
 tx-consumer   1         1         1            1           2d
 ```
 
-There are no applications connected to the `dr` site just yet.
+It did not deploy any application to the `dr-site`.
 ```bash
 $ bin/switch-ns dr-site
 $ kubectl get deployments
@@ -104,6 +104,8 @@ make
 ## Let's transfer messages from main to dr site
 If we want to see in action how to transfer messages we need to produce a message backlog. For that, we stop the consumer app and then producer app. The lag between stopping both will produce enough messages to demonstrate how to transfer those messages.
 
+> We use RabbitMQ PerfTest to deploy the consumer and producer applications. They have been configured to publish/consume to/from 10 queues. The producer will publish a message every second.
+
 1. Stop the consumer application
  ```
  make stop-main-consumer
@@ -113,24 +115,78 @@ If we want to see in action how to transfer messages we need to produce a messag
  make stop-main-producer
  ```
 3. Transfer messages
- ```
+ ```bash
  make start-main-transfer
  ```
-4. Check how the transfer is going
+ It should print out something like this:
  ```
+ Transfer messages [vhost %2F at http://admin:admin@localhost:15672] -> [vhost %2F at http://admin:admin@localhost:15673]
+Detected following non-empty queues:
+ - perf-test-001 (925)
+ - perf-test-002 (925)
+ - perf-test-003 (925)
+ - perf-test-004 (925)
+ - perf-test-005 (924)
+ - perf-test-006 (924)
+ - perf-test-007 (924)
+ - perf-test-008 (924)
+ - perf-test-009 (924)
+ - perf-test-010 (924)
+Creating Shovel for queue perf-test-001
+Creating Shovel for queue perf-test-002
+Creating Shovel for queue perf-test-003
+Creating Shovel for queue perf-test-004
+Creating Shovel for queue perf-test-005
+Creating Shovel for queue perf-test-006
+Creating Shovel for queue perf-test-007
+Creating Shovel for queue perf-test-008
+Creating Shovel for queue perf-test-009
+Creating Shovel for queue perf-test-010
+```
+4. Check how the transfer is going
+ ```bash
  make check-main-transfer
  ```
-5. Terminate the transfer when there are no messages left
+ If the queues are empty, this command will  print out:
  ```
+ Check Transfer messages from [vhost %2F at http://admin:admin@localhost:15672]
+ The following shovels are still running. Stop them to complete the transfer
+ - perf-test-001
+ - perf-test-002
+ - perf-test-003
+ - perf-test-004
+ - perf-test-005
+ - perf-test-006
+ - perf-test-007
+ - perf-test-008
+ - perf-test-009
+ - perf-test-010
+ ```
+5. Terminate the transfer when there are no messages left
+ ```bash
  make stop-main-transfer
  ```
+ It should print out:
+ ```
+ Stop Transfer messages from [vhost %2F at http://admin:admin@localhost:15672]
+Deleted shovel perf-test-001
+Deleted shovel perf-test-002
+Deleted shovel perf-test-003
+Deleted shovel perf-test-004
+Deleted shovel perf-test-005
+Deleted shovel perf-test-006
+Deleted shovel perf-test-007
+Deleted shovel perf-test-008
+Deleted shovel perf-test-009
+Deleted shovel perf-test-010
+```
 
 At this point, we can proceed with the upgrade of the main site without being worried about the messages.
 
-**NOTE**: We are not backing up all the definitions, we are only transferring messages !!!
+**NOTE 1**: We are not backing up all the definitions, we are only transferring messages !!! You are wondering if we need to declare the queue(s) in the target cluster (e.g. `dr-site` cluster) before moving the messages. The answer is that shovel will take care of that. It will create a queue in the target cluster with the same definition as the source queue. This will not happen with federated queues though.
 
 Once the main site is ready, we can move the messages back to the main site.
-1. Transfer messages from dr
+1. Transfer messages from `dr-site`
   ```
   make start-dr-transfer
   ```
@@ -178,6 +234,21 @@ Imagine a blue/green deployment where we prefer to move consumer applications an
   ```
 
 If we wanted to move the messages back from dr to main site we use the corresponding commands `make start-dr-transfer`, `make check-dr-transfer`, `make stop-dr-transfer`.
+
+
+## Using the scripts outside of this repository
+
+To transfer messages from cluster **A** to cluster **B**, first of all you need all the python files (`shovel.py`, `start-transfer.py`, `check-transfer.py` and `stop-transfer.py`).
+
+To start transferring messages you invoke the following command:
+```
+MAIN_MGT_URL= <put here the mgt uri of the source cluster in the form  http[s]://username:password@hostname:port >
+DR_MGT_URL= < put here the mgt uri of the target clster >
+MAIN_AMQP_URL = < put here the amqp uri of the source cluster in the form amqp[s]://username:password@hostname:port >
+DR_AMQP_URL = <put here the amqp uri of the target cluster >
+
+start-transfer.py --source-http $(MAIN_MGT_URL) --target-http $(DR_MGT_URL) --source-amqp $(MAIN_AMQP_URL) --target-amqp $(DR_AMQP_URL)
+```
 
 
 ## About Google Cloud Platform

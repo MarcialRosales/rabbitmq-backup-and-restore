@@ -78,6 +78,10 @@ stop-main-producer: ## Stop producer on main site
 	@bin/switch-ns main-site
 	kubectl delete -f topology/tx-producer.yml --ignore-not-found=true
 
+stop-main-consumer: ## Stop consumer on main site
+	@bin/switch-ns main-site
+	kubectl delete -f topology/tx-consumer.yml --ignore-not-found=true
+
 start-main-consumer: ## Start consumer on main site
 	@bin/switch-ns main-site
 	@kubectl delete configmap consumer-config --ignore-not-found=true
