@@ -22,7 +22,7 @@ In this scenario, we are going to:
 1. Deploy 2 RabbitMQ clusters on Kubernetes. Each cluster will be deployed on a separate namespace representing an hypothetical site. The sites/namespaces are `main-site` and `dr-site`
 2. Deploy a consumer and producer application so that we produce and consume messages to/from any site
 3. Produce a backlog of messages
-4. Transfer all messages -regardless on which queue they are- from main site to the dr site
+4. Transfer all messages on a *vhost* -regardless on which queue they are- from `main site` to the `dr site`
 
 This scenario will use the [Shovel plugin](https://www.rabbitmq.com/shovel.html) to move messages between clusters. To use this plugin we need to set [Per-vhost parameters](https://www.rabbitmq.com/parameters.html#parameter-management).
 
