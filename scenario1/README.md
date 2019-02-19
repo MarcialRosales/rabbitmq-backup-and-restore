@@ -47,9 +47,9 @@ In terms of roles and/or permissions we need:
 A **RabbitMQ user**, that from on we are going to name it `br_user`:
   - with the *user tag* [policymaker](https://www.rabbitmq.com/management.html#permissions). This *user tag* allows the user to set [Per-vhost parameters](https://www.rabbitmq.com/parameters.html#parameter-management) required to set up shovel
   - with access to the *vhost* in the RabbitMQ Cluster where we are going to set the shovel
+    > We can set the shovel in either cluster, the source or the target. In this scenario, we have chosen to set the shovel in the source cluster.
   - with *user tag* [monitoring](https://www.rabbitmq.com/management.html#permissions) so that this user can check the shovels' status  
   - with [configure](https://www.rabbitmq.com/access-control.html) and [write](https://www.rabbitmq.com/access-control.html) permissions to any queue in the target *vhost* / RabbitMQ Cluster.
-  > We can set the shovel in either cluster, the source or the target. In this scenario, we have chosen to set the shovel in the source cluster.
 
 
 We will automatically create this `br_user` user with the above requirements in both clusters. Therefore, both RabbitMQ Clusters will have at least the `admin`:`admin` user with `administrator` *user tag* and `br-user` with the `policymaker` and `monitoring` *user tag*.
