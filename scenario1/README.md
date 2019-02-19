@@ -14,6 +14,9 @@
 - [Using the scripts outside of this repository](#using-the-scripts-outside-of-this-repository)
 - [Getting started with Google Cloud Platform](#getting-started-with-google-cloud-platform)
 
+**TODO:**
+- Secure RabbitMQ clusters with TLS and configure Shovel accordingly
+
 ## Introduction
 We want to move all the messages from a vhost on RabbitMQ cluster onto another another RabbitMQ cluster. The reasons why we need to do that are not important but imagine that we are upgrading a RabbitMQ cluster and we do not want to take any chances with the messages should the upgrade failed. Therefore, the first thing we do is to move all the messages to a **backup** RabbitMQ cluster until we complete the upgrade and then we move back all the messages from the **backup** RabbitMQ cluster to the former cluster.
 
