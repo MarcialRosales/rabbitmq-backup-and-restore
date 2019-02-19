@@ -26,6 +26,20 @@ In this scenario, we are going to:
 
 This scenario will use the [Shovel plugin](https://www.rabbitmq.com/shovel.html) to move messages between clusters. To use this plugin we need to set [Per-vhost parameters](https://www.rabbitmq.com/parameters.html#parameter-management).
 
+```
+  ----main-site k8s namespace-------------    ----dr-site k8s namespace-------------
+
+    [svc:rmq-main-site-rabbitmq]<------shovel------>[svc:rmq-dr-site-rabbitmq]
+        /\     /\                                             /\     /\
+         |      |                                             |      |
+         |  [deploy:tx-prducer]                               |  [deploy:tx-prducer]
+         |                                                    |
+    [deploy:tx-consumer]                                  [deploy:tx-consumer]
+
+  ---------------------------------------    ---------------------------------------
+
+```
+
 ## Roles and responsibilities
 
 In terms of roles and/or permissions we need:
