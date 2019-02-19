@@ -44,15 +44,17 @@ This scenario will use the [Shovel plugin](https://www.rabbitmq.com/shovel.html)
 
 In terms of roles and/or permissions we need:
 
-A **RabbitMQ user** called `br_user` with, at least, the *user tag* [policymaker](https://www.rabbitmq.com/management.html#permissions) with access to the *vhost* in the RabbitMQ  Cluster where we are going to set the shovel. This *user tag* allows the user to set [Per-vhost parameters](https://www.rabbitmq.com/parameters.html#parameter-management) required to set up shovel.
-Additionally, we need to grant *user tag* `monitoring` so that this user can check the status of the shovel.  
-We can set the shovel in either cluster, the source or the target. In this scenario, we have chosen to set the shovel in the source cluster.
+A **RabbitMQ user**, that from on we are going to name it `br_user`:
+  - with the *user tag* [policymaker](https://www.rabbitmq.com/management.html#permissions). This *user tag* allows the user to set [Per-vhost parameters](https://www.rabbitmq.com/parameters.html#parameter-management) required to set up shovel
+  - with access to the *vhost* in the RabbitMQ Cluster where we are going to set the shovel
+  - with *user tag* [monitoring](https://www.rabbitmq.com/management.html#permissions) so that this user can check the shovels' status  
+  - with [configure](https://www.rabbitmq.com/access-control.html) and [write](https://www.rabbitmq.com/access-control.html) permissions to any queue in the target *vhost* / RabbitMQ Cluster.
+  > We can set the shovel in either cluster, the source or the target. In this scenario, we have chosen to set the shovel in the source cluster.
 
-The `br_user` will also need permissions to [configure](https://www.rabbitmq.com/access-control.html) and [write](https://www.rabbitmq.com/access-control.html) from any queue in the target *vhost* / RabbitMQ Cluster.
 
-We will automatically create this  `br_user` user with the above requirements in both clusters. Therefore, both RabbitMQ Clusters will have at least the `admin`:`admin` user with *user tag* `administrator` and `br-user` with the *user tag* `policymaker`.
+We will automatically create this `br_user` user with the above requirements in both clusters. Therefore, both RabbitMQ Clusters will have at least the `admin`:`admin` user with `administrator` *user tag* and `br-user` with the `policymaker` and `monitoring` *user tag*.
 
-Additionally, we have created separate users for the consumer and producer applications.
+Additionally, we have created separate users for the consumer (`consumer:consumer`) and producer (`producer:producer`) applications.
 
 ## Getting started
 
