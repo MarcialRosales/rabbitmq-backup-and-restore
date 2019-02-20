@@ -78,10 +78,10 @@ delete-sites: ## Delete k8s namespaces for each site: main & dr
 	@kubectl delete namespaces dr-site
 
 enable-mgt-to-main-rabbitmq: ## Enable Access the RabbitMQ Management interface on local port $(MAIN_MGT_PORT)
-	@kubectl port-forward --namespace main-site svc/rmq-main-site-rabbitmq $(MAIN_MGT_PORT):15672
+	@kubectl port-forward --namespace main-site svc/rmq-main-site-rabbitmq-ha $(MAIN_MGT_PORT):15672
 
 enable-mgt-to-dr-rabbitmq: ## Enable Access the RabbitMQ Management interface on local port $(DR_MGT_PORT)
-	@kubectl port-forward --namespace dr-site svc/rmq-dr-site-rabbitmq $(DR_MGT_PORT):15672
+	@kubectl port-forward --namespace dr-site svc/rmq-dr-site-rabbitmq-ha $(DR_MGT_PORT):15672
 
 stop-apps: stop-main-producer stop-main-consumer stop-dr-producer stop-dr-consumer ## Stop all applications, producer & consumer in both sites
 

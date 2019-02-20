@@ -7,6 +7,5 @@ K8S_NAMESPACE=$($SCRIPT/current-ns)
 echo "Starting RabbitMQ server on $K8S_NAMESPACE namespace"
 
 helm install --name rmq-$K8S_NAMESPACE --namespace $K8S_NAMESPACE \
-  --set rabbitmq.username=admin,rabbitmq.password=admin \
-  -f conf/rabbitmq-helm-values.yaml \
-  stable/rabbitmq
+  --set rabbitmqUsername=admin,rabbitmqPassword=admin,replicaCount=2 \
+  stable/rabbitmq-ha
