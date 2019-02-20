@@ -2,10 +2,95 @@
 set -eu
 
 SCRIPT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 K8S_NAMESPACE=$($SCRIPT/current-ns)
-echo "Starting RabbitMQ server on $K8S_NAMESPACE namespace"
+SERVICE_NAME=rmq-$K8S_NAMESPACE-rabbitmq-ha
+SERVICE_NAME_CN=$SERVICE_NAME.$K8S_NAMESPACE
+SECRETS_DIR=$SCRIPT/../secrets
 
-helm install --name rmq-$K8S_NAMESPACE --namespace $K8S_NAMESPACE \
-  --set rabbitmqUsername=admin,rabbitmqPassword=admin,replicaCount=2 \
-  stable/rabbitmq-ha
+function start {
+  create-tls-certificate-if-required
+  create-helm-chart-configuration
+  create-service-tls-secret
+  install-helm-chart
+}
+
+function create-tls-certificate-if-required {
+  if [ ! -f ${SECRETS_DIR}/cacert.cer ]; then
+     echo "CA Certificate not found. Run `make generate-ca-certificate` to generate one."
+     exit 1
+  fi
+
+  if [ ! -f ${SECRETS_DIR}/${SERVICE_NAME}-key.pem ]; then
+    echo "Generating TLS Certificate for $SERVICE_NAME ..."
+
+    # Generate a private RSA key
+    echo "Generating private key -> $SERVICE_NAME-key.pem ..."
+    docker run -it -v $SECRETS_DIR:/export frapsoft/openssl genrsa -out /export/$SERVICE_NAME-key.pem 2048
+
+    # Generate a certificate from our private key.
+    echo "Generating certificate -> $SERVICE_NAME-req.pem ..."
+    docker run -it -v $SECRETS_DIR:/export frapsoft/openssl req -new -key /export/$SERVICE_NAME-key.pem -out /export/$SERVICE_NAME-req.pem -outform PEM -subj /CN=$SERVICE_NAME_CN/ -nodes
+
+    # Sign the certificate with our CA.
+    echo "Signing certificate -> $SERVICE_NAME-cert.pem ..."
+    docker run -it -v $SECRETS_DIR:/export frapsoft/openssl ca -config /export/openssl.cnf -in /export/$SERVICE_NAME-req.pem -out /export/$SERVICE_NAME-cert.pem -notext -batch -extensions server_ca_extensions
+
+    # Create a key store that will contain our certificate.
+    echo "Producing keystore -> $SERVICE_NAME-keycert.p12 "
+    docker run -it -v $SECRETS_DIR:/export frapsoft/openssl pkcs12 -export -out /export/$SERVICE_NAME-keycert.p12 -in /export/$SERVICE_NAME-cert.pem -inkey /export/$SERVICE_NAME-key.pem -passout pass:password
+
+  else
+    echo "TLS Certificate for $SERVICE_NAME already exist"
+  fi
+
+}
+
+function create-helm-chart-configuration {
+  cat > ${SECRETS_DIR}/helm.values <<EOF
+## RabbitMQ application credentials
+rabbitmqUsername: admin
+rabbitmqPassword: admin
+
+## SSL certificates
+rabbitmqCert:
+  enabled: true
+  existingSecret: ${SERVICE_NAME}-tls
+  cacertfile: "/etc/cert/cacert.pem"
+  certfile: "/etc/cert/cert.pem"
+
+rabbitmqAmqpsSupport:
+  enabled: true
+  config: |
+    listeners.ssl.default             = 5671
+    ssl_options.cacertfile            = /etc/cert/cacert.pem
+    ssl_options.certfile              = /etc/cert/cert.pem
+    ssl_options.keyfile               = /etc/cert/key.pem
+
+## Number of replicas
+replicaCount: 2
+EOF
+
+}
+
+function create-service-tls-secret {
+
+  kubectl delete secret ${SERVICE_NAME}-tls --ignore-not-found=true
+
+  kubectl create secret generic ${SERVICE_NAME}-tls \
+    --from-file=cert.pem=${SECRETS_DIR}/${SERVICE_NAME}-cert.pem \
+    --from-file=key.pem=${SECRETS_DIR}/${SERVICE_NAME}-key.pem \
+    --from-file=${SECRETS_DIR}/cacert.pem
+
+}
+
+function install-helm-chart {
+  echo "Starting RabbitMQ server on $K8S_NAMESPACE namespace"
+
+  helm install \
+    --name rmq-$K8S_NAMESPACE \
+    --namespace $K8S_NAMESPACE \
+    -f ${SECRETS_DIR}/helm.values \
+    stable/rabbitmq-ha
+}
+
+start

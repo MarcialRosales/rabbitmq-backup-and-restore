@@ -80,18 +80,22 @@ def check_transfer(http, vhost):
     queuesToMigrate = find_queues_with_messages(source_base_url, source_credentials, vhost)
     if len(queuesToMigrate) > 0:
         print "Transfer has not complete yet. There are %d queues with content" % (len(queuesToMigrate))
-        exit();
     else:
         print "There are no queues with messages"
 
     resp = get_from(source_base_url, source_credentials, shovels(vhost))
     list_of_shovels = json.load(resp)
     if len(list_of_shovels) > 0:
-        print "The following shovels are still running. Stop them to complete the transfer"
+        print "The following shovels are still running/terminated:"
         for s in list_of_shovels :
-            print " - %s " % (s["name"])
+            if s["state"] <> "terminated":
+                print " - %s ! %s" % (s["name"], s["state"] )
+            else:
+                print " - %s ! TERMINATED Reason: %s " % (s["name"], s["reason"][:25])
     else:
-        print "Transfer fully completed. There are no queues with messages nor shovels running"
+        print "There are no shovels running/terminated"
+        if len(queuesToMigrate) < 1:
+            print "Transfer fully completed. There are no queues with messages nor shovels running"
 
 def find_queues_with_messages(base_url, credentials, vhost):
     resp = get_from(base_url, credentials, queues(vhost))

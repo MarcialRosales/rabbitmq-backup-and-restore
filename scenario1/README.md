@@ -14,8 +14,8 @@
 - [Using the scripts outside of this repository](#using-the-scripts-outside-of-this-repository)
 - [Getting started with Google Cloud Platform](#getting-started-with-google-cloud-platform)
 
-**TODO:**
-- Secure RabbitMQ clusters with TLS and configure Shovel accordingly
+**TODO**
+- Declare users via the helm chart configuration. 
 
 ## Introduction
 We want to move all the messages from a vhost on RabbitMQ cluster onto another another RabbitMQ cluster. The reasons why we need to do that are not important but imagine that we are upgrading a RabbitMQ cluster and we do not want to take any chances with the messages should the upgrade failed. Therefore, the first thing we do is to move all the messages to a **backup** RabbitMQ cluster until we complete the upgrade and then we move back all the messages from the **backup** RabbitMQ cluster to the former cluster.
@@ -65,7 +65,7 @@ Additionally, we have created separate users for the consumer (`consumer:consume
 We are going to deploy RabbitMQ and the applications on kubernetes. Check out the section [Getting started with Google Cloud Platform](#Getting-started-with-Google-Cloud-Platform) to get your local environment ready to operate with GCP tools.
 
 ### Get helm ready
-We are going to use this [Helm chart](https://github.com/helm/charts/blob/master/stable/rabbitmq) to deploy RabbitMQ. You can see what *stable* releases of this chart are available [here](https://console.cloud.google.com/storage/browser/kubernetes-charts?prefix=rabbitmq).
+We are going to use this [Helm chart](https://github.com/helm/charts/blob/master/stable/rabbitmq-ha) to deploy RabbitMQ. You can see what *stable* releases of this chart are available [here](https://console.cloud.google.com/storage/browser/kubernetes-charts?prefix=rabbitmq).
 
   Before deploying the helm chart we are going to update the helm repositories so that it deploys the latest:
   ```bash
@@ -84,8 +84,8 @@ helm list
 ```
 ```
 NAME     	REVISION	UPDATED                 	STATUS  	CHART         	NAMESPACE
-rmq-dr-site  	1       	Fri Jan 25 15:40:27 2019	DEPLOYED	rabbitmq-4.1.0	dr-site
-rmq-main-site	1       	Fri Jan 25 15:40:11 2019	DEPLOYED	rabbitmq-4.1.0	main-site
+rmq-main-site	1       	Wed Feb 20 11:54:42 2019	DEPLOYED	rabbitmq-ha-1.19.0	3.7.8      	main-site
+rmq-dr-site	1       	Wed Feb 20 11:54:42 2019	DEPLOYED	rabbitmq-ha-1.19.0	3.7.8      	dr-site
 ```  
 
 If you want to use `kubectl` to see services, deployments and pods, we have facilitated 2 scripts to conveniently switch between sites/namespaces. See below:
@@ -114,10 +114,9 @@ $ kubectl get services
 ```
 ```
 NAME                              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                          AGE
-rmq-main-site-rabbitmq            ClusterIP   10.47.242.116   <none>        4369/TCP,5672/TCP,25672/TCP,15672/TCP,9090/TCP   2d
-rmq-main-site-rabbitmq-headless   ClusterIP   None            <none>        4369/TCP,5672/TCP,25672/TCP,15672/TCP            2d
+rmq-main-site-rabbitmq-ha             ClusterIP   None         <none>        15672/TCP,5672/TCP,4369/TCP,5671/TCP   4m
+rmq-main-site-rabbitmq-ha-discovery   ClusterIP   None         <none>        15672/TCP,5672/TCP,4369/TCP,5671/TCP   4m
 ```
-
 
 It also deployed one producer and one consumer application on the `main-site` connected to the local RabbitMQ cluster.
 ```bash
@@ -154,7 +153,13 @@ If we want to see in action how to transfer messages we need to produce a messag
 
 > We use RabbitMQ PerfTest to deploy the consumer and producer applications. They have been configured to publish/consume to/from 10 queues. The producer will publish a message every second.
 
-**Important note about shovel**: We are using [Shovel plugin](https://www.rabbitmq.com/shovel.html) to transfer messages. We need to create a **shovel** per queue and a unique name within the **vhost** where we create it. The tool we have created assumes there are no shovels in the vhost.
+  **Important note about Shovel**: We are using [Shovel plugin](https://www.rabbitmq.com/shovel.html) to transfer messages. We need to create a **shovel** per queue and a unique name within the **vhost** where we create it. The tool we have created assumes there are no shovels in the vhost.
+
+  **Important note about securing Shovel connections with TLS**: To secure the connection between the two sites, we are going to use [AMQPS protocol with Shovel](https://www.rabbitmq.com/shovel.html#tls-connections). Both clusters have been already configured. The following command allows us to check if AMPQS (`5671`) port is ready:
+  ```
+  kubectl exec -it rmq-main-site-rabbitmq-ha-0 rabbitmq-diagnostics check_port_listener 5671
+  ```
+
 
 1. Stop the consumer application
  ```
@@ -170,7 +175,7 @@ If we want to see in action how to transfer messages we need to produce a messag
  ```
  It should print out something like this:
  ```
- Transfer messages [vhost %2F at http://admin:admin@localhost:15672] -> [vhost %2F at http://admin:admin@localhost:15673]
+ Transfer messages [vhost %2F at amqp://] -> [vhost %2F at amqps://br_user:br_user@rmq-dr-site-rabbitmq-ha.dr-site:5672cacertfile=/etc/cert/cacert.pem]
   Detected following non-empty queues:
    - perf-test-001 (925)
    - perf-test-002 (925)

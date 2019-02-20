@@ -18,21 +18,27 @@ MAIN_MGT_URL_FOR_BR_USER := "http://$(BR_CREDENTIALS)@localhost:$(MAIN_MGT_PORT)
 DR_MGT_URL_FOR_BR_USER := "http://$(BR_CREDENTIALS)@localhost:$(DR_MGT_PORT)"
 
 # AMQP URLS
-MAIN_AMQP_URL_FOR_BR_USER := "amqp://$(BR_CREDENTIALS)@rmq-main-site-rabbitmq.main-site:5672"
-DR_AMQP_URL_FOR_BR_USER := "amqp://$(BR_CREDENTIALS)@rmq-dr-site-rabbitmq.dr-site:5672"
+MAIN_AMQP_URL_FOR_BR_USER := "amqp://$(BR_CREDENTIALS)@rmq-main-site-rabbitmq-ha.main-site:5672"
+DR_AMQP_URL_FOR_BR_USER := "amqp://$(BR_CREDENTIALS)@rmq-dr-site-rabbitmq-ha.dr-site:5672"
 
-MAIN_AMQP_URL_FOR_CONSUMER := "amqp://$(CONSUMER_CREDENTIALS)@rmq-main-site-rabbitmq.main-site:5672"
-MAIN_AMQP_URL_FOR_PRODUCER := "amqp://$(PRODUCER_CREDENTIALS)@rmq-main-site-rabbitmq.main-site:5672"
+MAIN_AMQP_URL_FOR_CONSUMER := "amqp://$(CONSUMER_CREDENTIALS)@rmq-main-site-rabbitmq-ha.main-site:5672"
+MAIN_AMQP_URL_FOR_PRODUCER := "amqp://$(PRODUCER_CREDENTIALS)@rmq-main-site-rabbitmq-ha.main-site:5672"
 
-DR_AMQP_URL_FOR_CONSUMER := "amqp://$(CONSUMER_CREDENTIALS)@rmq-dr-site-rabbitmq.dr-site:5672"
-DR_AMQP_URL_FOR_PRODUCER := "amqp://$(PRODUCER_CREDENTIALS)@rmq-dr-site-rabbitmq.dr-site:5672"
+DR_AMQP_URL_FOR_CONSUMER := "amqp://$(CONSUMER_CREDENTIALS)@rmq-dr-site-rabbitmq-ha.dr-site:5672"
+DR_AMQP_URL_FOR_PRODUCER := "amqp://$(PRODUCER_CREDENTIALS)@rmq-dr-site-rabbitmq-ha.dr-site:5672"
+
+# AMPQS URLS
+TLS := cacertfile=/etc/cert/cacert.pem&certfile=/etc/cert/cert.pem&keyfile=/etc/cert/key.pem&verify=verify_none
+
+MAIN_AMQPS_URL_FOR_BR_USER := "amqps://$(BR_CREDENTIALS)@rmq-main-site-rabbitmq-ha.main-site:5671?$(TLS)"
+DR_AMQPS_URL_FOR_BR_USER := "amqps://$(BR_CREDENTIALS)@rmq-dr-site-rabbitmq-ha.dr-site:5671?$(TLS)"
 
 ### TARGETS ###
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-deploy-all: create-sites start-rabbitmq declare-app-users start-main-consumer start-main-producer ## Deploy entire topology
+deploy-all: create-sites generate-ca-certificate start-rabbitmq declare-app-users start-main-consumer start-main-producer ## Deploy entire topology
 
 destroy-all: stop-apps stop-rabbitmq delete-sites ## Destroy entire topology
 
@@ -131,20 +137,41 @@ declare-main-br-user:
 declare-dr-br-user:
 	@curl -u $(ADMIN_CREDENTIALS) -X POST -H "Content-Type: application/json" http://localhost:$(DR_MGT_PORT)/api/definitions -d "@topology/br_user.json"
 
-start-main-transfer: declare-main-br-user ## Transfer messages on default vhost from main site to dr site on any queue
+declare-br-user: declare-main-br-user declare-dr-br-user
+
+start-main-transfer: declare-br-user ## Transfer messages (over AMQPS) on default vhost from main site to dr site on any queue
+	@bin/start-transfer.py --source-http $(MAIN_MGT_URL_FOR_BR_USER) --target-amqp $(DR_AMQPS_URL_FOR_BR_USER)
+
+start-main-transfer-insecure: declare-br-user ## Transfer messages (over AMQP) on default vhost from main site to dr site on any queue
 	@bin/start-transfer.py --source-http $(MAIN_MGT_URL_FOR_BR_USER) --target-amqp $(DR_AMQP_URL_FOR_BR_USER)
 
-stop-main-transfer: declare-main-br-user ## Stop transferring messages on default vhost from main site to dr site on any queue
+stop-main-transfer: declare-br-user ## Stop transferring messages on default vhost from main site to dr site on any queue
 	@bin/stop-transfer.py --source-http $(MAIN_MGT_URL_FOR_BR_USER)
 
-check-main-transfer: declare-main-br-user ## Check status of transfer from main site to dr site on default vhost
+check-main-transfer: declare-br-user ## Check status of transfer from main site to dr site on default vhost
 	@bin/check-transfer.py --source-http $(MAIN_MGT_URL_FOR_BR_USER)
 
-start-dr-transfer: declare-dr-br-user ## Transfer messages on default vhost from dr site to main site on any queue
+start-dr-transfer: declare-br-user ## Transfer messages (over AMQPS) on default vhost from dr site to main site on any queue
+	@bin/start-transfer.py --source-http $(DR_MGT_URL_FOR_BR_USER) --target-amqp $(MAIN_AMQPS_URL_FOR_BR_USER)
+
+start-dr-transfer-insecure: declare-br-user ## Transfer messages (over AMQP) on default vhost from dr site to main site on any queue
 	@bin/start-transfer.py --source-http $(DR_MGT_URL_FOR_BR_USER) --target-amqp $(MAIN_AMQP_URL_FOR_BR_USER)
 
-stop-dr-transfer: declare-dr-br-user ## Stop transferring messages on default vhost from dr site to main site on any queue
+stop-dr-transfer: declare-br-user ## Stop transferring messages on default vhost from dr site to main site on any queue
 	@bin/stop-transfer.py --source-http $(DR_MGT_URL_FOR_BR_USER)
 
-check-dr-transfer: declare-dr-br-user ## Check status of transfer from dr site to main site on default vhost
+check-dr-transfer: declare-br-user ## Check status of transfer from dr site to main site on default vhost
 	@bin/check-transfer.py --source-http $(DR_MGT_URL_FOR_BR_USER)
+
+clean-secrets:
+	@rm -rf secrets
+
+generate-ca-certificate: clean-secrets ## Generate CA certificate for AMQPS
+	@mkdir -p secrets/private
+	@mkdir -p secrets/certs
+	@chmod 700 secrets/private
+	@echo 01 > secrets/serial
+	@touch secrets/index.txt
+	@cp topology/openssl.cnf secrets
+	@docker run -it -v $(shell pwd)/secrets:/export frapsoft/openssl req -x509 -config /export/openssl.cnf  -newkey rsa:2048 -days 365 -out /export/cacert.pem -outform PEM -subj /CN=MyTestCA/ -nodes
+	@docker run -it -v $(shell pwd)/secrets:/export frapsoft/openssl x509 -in /export/cacert.pem -out /export/cacert.cer -outform DER
