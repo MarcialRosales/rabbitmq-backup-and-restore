@@ -15,17 +15,20 @@
 - [Getting started with Google Cloud Platform](#getting-started-with-google-cloud-platform)
 
 **TODO**
-- Declare users via the helm chart configuration. 
+- Declare users via the helm chart configuration.
 
 ## Introduction
 We want to move all the messages from a vhost on RabbitMQ cluster onto another another RabbitMQ cluster. The reasons why we need to do that are not important but imagine that we are upgrading a RabbitMQ cluster and we do not want to take any chances with the messages should the upgrade failed. Therefore, the first thing we do is to move all the messages to a **backup** RabbitMQ cluster until we complete the upgrade and then we move back all the messages from the **backup** RabbitMQ cluster to the former cluster.
 
+We want to move messages in a secure way therefore we need to use TLS in all the communications.
+
 ## What we are going to do
 In this scenario, we are going to:
-1. Deploy 2 RabbitMQ clusters on Kubernetes. Each cluster will be deployed on a separate namespace representing an hypothetical site. The sites/namespaces are `main-site` and `dr-site`
-2. Deploy a consumer and producer application so that we produce and consume messages to/from any site
-3. Produce a backlog of messages
-4. Transfer all messages on a *vhost* -regardless on which queue they are- from `main site` to the `dr site`
+1. Issue CA certificate, and PrivateKey+Certificate for both RabbitMQ Clusters
+2. Deploy 2 RabbitMQ clusters on Kubernetes configured with TLS. Each cluster will be deployed on a separate namespace representing an hypothetical site. The sites/namespaces are `main-site` and `dr-site`
+3. Deploy a consumer and producer application so that we produce and consume messages to/from any site
+4. Produce a backlog of messages
+5. Transfer all messages (over AMQPS) on a *vhost* -regardless on which queue they are- from `main site` to the `dr site`
 
 This scenario will use the [Shovel plugin](https://www.rabbitmq.com/shovel.html) to move messages between clusters. To use this plugin we need to set [Per-vhost parameters](https://www.rabbitmq.com/parameters.html#parameter-management).
 
@@ -42,6 +45,7 @@ This scenario will use the [Shovel plugin](https://www.rabbitmq.com/shovel.html)
   ---------------------------------------    ---------------------------------------
 
 ```
+**Note**: All communications represented in the diagram with arrows are within the k8s cluster. We are not representing the communication from our localhost to the management port via *port forwarding*. 
 
 ## Roles and responsibilities
 
