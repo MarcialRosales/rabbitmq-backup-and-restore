@@ -16,6 +16,7 @@
 
 **TODO**
 - Declare users via the helm chart configuration.
+- Add failures we could encounter with Shovel
 
 ## Introduction
 We want to move all the messages from a vhost on RabbitMQ cluster onto another another RabbitMQ cluster. The reasons why we need to do that are not important but imagine that we are upgrading a RabbitMQ cluster and we do not want to take any chances with the messages should the upgrade failed. Therefore, the first thing we do is to move all the messages to a **backup** RabbitMQ cluster until we complete the upgrade and then we move back all the messages from the **backup** RabbitMQ cluster to the former cluster.
@@ -45,7 +46,7 @@ This scenario will use the [Shovel plugin](https://www.rabbitmq.com/shovel.html)
   ---------------------------------------    ---------------------------------------
 
 ```
-**Note**: All communications represented in the diagram with arrows are within the k8s cluster. We are not representing the communication from our localhost to the management port via *port forwarding*. 
+**Note**: All communications represented in the diagram with arrows are within the k8s cluster. We are not representing the communication from our localhost to the management port via *port forwarding*.
 
 ## Roles and responsibilities
 
@@ -179,7 +180,8 @@ If we want to see in action how to transfer messages we need to produce a messag
  ```
  It should print out something like this:
  ```
- Transfer messages [vhost %2F at amqp://] -> [vhost %2F at amqps://br_user:br_user@rmq-dr-site-rabbitmq-ha.dr-site:5672cacertfile=/etc/cert/cacert.pem]
+ Transfer messages [vhost %2F at amqp://] -> [vhost %2F at amqps://br_user:br_user@rmq-dr-site-rabbitmq-ha.dr-site:5671?cacertfile=/etc/cert/cacert.pem&certfile=/etc/cert/cert.pem&keyfile=/etc/cert/key.pem&verify=verify_none]
+  Setting up shovel at [vhost %2F at http://br_user:br_user@localhost:15672]
   Detected following non-empty queues:
    - perf-test-001 (925)
    - perf-test-002 (925)
