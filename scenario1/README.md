@@ -8,10 +8,14 @@
 - [Getting started](#Getting-started)  
   - [Get Kubernetes ready](#Get-Kubernetes-ready)  
   - [Get helm ready](#Get-helm-ready)
-- [Deploy RabbitMQ cluster et al.](#deploy-rabbitmq-cluster-et-al)
-- [Let's transfer messages from main to dr site](#lets-transfer-messages-from-main-to-dr-site)
-- [Let's simulate a typical blue/green deployment](#lets-simulate-a-typical-bluegreen-deployment)
+- [Deploy scenario](#Deploy-scenario)
+  - [Deploy RabbitMQ cluster et al.](#deploy-rabbitmq-cluster-et-al)
+  - [Deploy consumer and producer application](#Deploy-consumer-and-producer-application)
+  - [Let's transfer messages from main to dr site](#lets-transfer-messages-from-main-to-dr-site)
+  - [Let's simulate a typical blue/green deployment](#lets-simulate-a-typical-bluegreen-deployment)
+  - [Delete everything when ready](#Delete-everything-when-ready)
 - [Appendix](#appendix)
+  - [Troubleshooting Shovel failures](#Troubleshooting-Shovel-failures)
   - [Using the scripts outside of this repository](#using-the-scripts-outside-of-this-repository)
   - [Getting started with Google Cloud Platform](#getting-started-with-google-cloud-platform)
 
@@ -80,7 +84,7 @@ We are going to use this [Helm chart](https://github.com/helm/charts/blob/master
 
 ## Deploy scenario
 
-### 1. Deploy RabbitMQ cluster et al.
+### Deploy RabbitMQ cluster et al.
 Run the following command to deploy both sites and the RabbitMQ Cluster on each site:
 ```bash
 make create-sites
@@ -128,7 +132,7 @@ rmq-main-site-rabbitmq-ha             ClusterIP   None         <none>        156
 rmq-main-site-rabbitmq-ha-discovery   ClusterIP   None         <none>        15672/TCP,5672/TCP,4369/TCP,5671/TCP   4m
 ```
 
-### 2. Deploy consumer and producer application  
+### Deploy consumer and producer application  
 
 First of all we need to create the users for both applications. We could have done that when we deployed the Rabbitmq chart; but we preferred to separate user creation from the RabbitMQ cluster deployment.
 
@@ -147,7 +151,7 @@ make start-main-producer
 make start-main-consumer
 ```
 
-### 3. Let's transfer messages from main to dr site
+### Let's transfer messages from main to dr site
 If we want to see in action how to transfer messages we need to produce a message backlog. For that, we stop the consumer app and then producer app. The lag between stopping both will produce enough messages to demonstrate how to transfer those messages.
 
 > We use RabbitMQ PerfTest to deploy the consumer and producer applications. They have been configured to publish/consume to/from 10 queues. The producer will publish a message every second.
@@ -255,7 +259,7 @@ Once the main site is ready, we can move the messages back to the main site.
   make stop-dr-transfer
   ```
 
-### 4. Let's simulate a typical blue/green deployment
+### Let's simulate a typical blue/green deployment
 To transfer messages from one cluster to another we used [Shovel plugin](https://www.rabbitmq.com/shovel.html). We can configure the **shovel plugin** to delete itself when it empties the source queue. This is pretty convenient because we don't need to delete them however we have to be certain there wont be further messages coming in.
 
 Imagine a blue/green deployment where we prefer to move consumer applications and then producers. In this scenario, producers will be until the last minute publishing messages. Furthermore, we do not want to wait until publisher applications are moved to start transferring messages. So the sequence is as follows:
@@ -295,7 +299,7 @@ Imagine a blue/green deployment where we prefer to move consumer applications an
 If we wanted to move the messages back from dr to main site we use the corresponding commands `make start-dr-transfer`, `make check-dr-transfer`, `make stop-dr-transfer`.
 
 
-### 5. To delete everything when ready
+### Delete everything when ready
 Once you are done with this scenario you can delete everything with the following command:
 ```bash
 make destroy-all
@@ -307,6 +311,30 @@ make
 ```
 
 ## Appendix
+
+### Troubleshooting Shovel failures
+
+We are capturing on this section all the failures we encountered around shovels should someone encounters them.
+
+To detect that there are failures we should monitor the Shovel status via the management api/UI. Each shovel has an `state` attribute. In normal circumstances, it should be in `running` state. When there are issues, it is typically in the `terminated` state and the `reason` attribute reports the reason. However, the information available in the `reason` is not extremely useful to troubleshoot the issue. We need to inspect the RabbitMQ's log of the target node.
+
+
+#### Wrong RabbitMQ's SSL Certificate KeyUsage   
+
+We will find the following log statement in the target RabbitMQ node/cluster when the source RabbitMQ node/cluster is using a SSL Certificate issued without the proper `KeyUsage`. In fact, most likely, it is missing the `digitalSignature` usage.
+
+```
+2019-02-20 17:59:47.761 [info] <0.1408.0> TLS server: In state hello at tls_handshake.erl:200 generated SERVER ALERT: Fatal - Insufficient Security - no_suitable_ciphers
+```
+
+In this scenario, we are issuing the certificates with the following OpenSSL's extensions. The full configuration file can be found [here](topology/openssl.cnf).
+```
+[ server_ca_extensions ]
+basicConstraints = CA:false
+keyUsage = digitalSignature,keyEncipherment
+extendedKeyUsage = 1.3.6.1.5.5.7.3.1
+```
+
 
 ### Using the scripts outside of this repository
 
