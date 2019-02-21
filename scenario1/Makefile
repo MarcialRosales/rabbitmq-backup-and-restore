@@ -38,8 +38,6 @@ DR_AMQPS_URL_FOR_BR_USER := "amqps://$(BR_CREDENTIALS)@rmq-dr-site-rabbitmq-ha.d
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-deploy-all: create-sites generate-ca-certificate start-rabbitmq declare-app-users start-main-consumer start-main-producer ## Deploy entire topology
-
 destroy-all: stop-apps stop-rabbitmq delete-sites ## Destroy entire topology
 
 start-rabbitmq: start-main-rabbitmq start-dr-rabbitmq ## Start RabbitMQ cluster on both sites

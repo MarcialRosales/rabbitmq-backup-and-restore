@@ -11,8 +11,9 @@
 - [Deploy RabbitMQ cluster et al.](#deploy-rabbitmq-cluster-et-al)
 - [Let's transfer messages from main to dr site](#lets-transfer-messages-from-main-to-dr-site)
 - [Let's simulate a typical blue/green deployment](#lets-simulate-a-typical-bluegreen-deployment)
-- [Using the scripts outside of this repository](#using-the-scripts-outside-of-this-repository)
-- [Getting started with Google Cloud Platform](#getting-started-with-google-cloud-platform)
+- [Appendix](#appendix)
+  - [Using the scripts outside of this repository](#using-the-scripts-outside-of-this-repository)
+  - [Getting started with Google Cloud Platform](#getting-started-with-google-cloud-platform)
 
 **TODO**
 - Declare users via the helm chart configuration.
@@ -77,10 +78,14 @@ We are going to use this [Helm chart](https://github.com/helm/charts/blob/master
   helm repo update
   ```
 
-## Deploy RabbitMQ cluster et al.
-To deploy the scenario run the following command:
+## Deploy scenario
+
+### 1. Deploy RabbitMQ cluster et al.
+Run the following command to deploy both sites and the RabbitMQ Cluster on each site:
 ```bash
-make deploy-all
+make create-sites
+make generate-ca-certificate
+make start-rabbitmq
 ```
 
 It takes some time to get the cluster ready. Once it is ready we can see it by running:
@@ -112,7 +117,7 @@ main-site
 ```
 
 
-Let's find out what we have deployed with the command `make deploy-all`. It deployed the 2 sites, with a RabbitMQ cluster on each site. See below:
+Let's find out what we have deployed so far:
 ```bash
 $ bin/switch-ns main-site
 $ kubectl get services
@@ -123,37 +128,26 @@ rmq-main-site-rabbitmq-ha             ClusterIP   None         <none>        156
 rmq-main-site-rabbitmq-ha-discovery   ClusterIP   None         <none>        15672/TCP,5672/TCP,4369/TCP,5671/TCP   4m
 ```
 
-It also deployed one producer and one consumer application on the `main-site` connected to the local RabbitMQ cluster.
-```bash
-$ kubectl get deployments
+### 2. Deploy consumer and producer application  
+
+First of all we need to create the users for both applications. We could have done that when we deployed the Rabbitmq chart; but we preferred to separate user creation from the RabbitMQ cluster deployment.
+
+We are going to create users via the Management API. And we want to operate from outside of the kubernetes cluster, hence we need to expose that management port. Run the following each command on a separate terminal:
+```
+make enable-mgt-to-main-rabbitmq
 ```
 ```
-NAME          DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-tx-producer   1         1         1            1           2d
-tx-consumer   1         1         1            1           2d
+make enable-mgt-to-dr-rabbitmq
 ```
 
-It did not deploy any application to the `dr-site`.
-```bash
-$ bin/switch-ns dr-site
-$ kubectl get deployments
+Now, we can the following commands to deploy both applications in the `main-site`:
 ```
-```
-No resources found.
+make declare-app-users
+make start-main-producer
+make start-main-consumer
 ```
 
-### To delete everything when ready
-Once you are done with this scenario you can delete everything with the following command:
-```bash
-make destroy-all
-```
-
-To know all the available actions/commands simply run:
-```
-make
-```
-
-## Let's transfer messages from main to dr site
+### 3. Let's transfer messages from main to dr site
 If we want to see in action how to transfer messages we need to produce a message backlog. For that, we stop the consumer app and then producer app. The lag between stopping both will produce enough messages to demonstrate how to transfer those messages.
 
 > We use RabbitMQ PerfTest to deploy the consumer and producer applications. They have been configured to publish/consume to/from 10 queues. The producer will publish a message every second.
@@ -261,7 +255,7 @@ Once the main site is ready, we can move the messages back to the main site.
   make stop-dr-transfer
   ```
 
-## Let's simulate a typical blue/green deployment
+### 4. Let's simulate a typical blue/green deployment
 To transfer messages from one cluster to another we used [Shovel plugin](https://www.rabbitmq.com/shovel.html). We can configure the **shovel plugin** to delete itself when it empties the source queue. This is pretty convenient because we don't need to delete them however we have to be certain there wont be further messages coming in.
 
 Imagine a blue/green deployment where we prefer to move consumer applications and then producers. In this scenario, producers will be until the last minute publishing messages. Furthermore, we do not want to wait until publisher applications are moved to start transferring messages. So the sequence is as follows:
@@ -301,7 +295,20 @@ Imagine a blue/green deployment where we prefer to move consumer applications an
 If we wanted to move the messages back from dr to main site we use the corresponding commands `make start-dr-transfer`, `make check-dr-transfer`, `make stop-dr-transfer`.
 
 
-## Using the scripts outside of this repository
+### 5. To delete everything when ready
+Once you are done with this scenario you can delete everything with the following command:
+```bash
+make destroy-all
+```
+
+To know all the available actions/commands simply run:
+```
+make
+```
+
+## Appendix
+
+### Using the scripts outside of this repository
 
 To transfer messages from cluster **A** to cluster **B**, first of all you need all the python files (`shovel.py`, `start-transfer.py`, `check-transfer.py` and `stop-transfer.py`).
 
@@ -318,9 +325,9 @@ start-transfer.py --source-http $(MAIN_MGT_URL) --target-amqp $(DR_AMQP_URL)
 
 
 
-## Getting started with Google Cloud Platform
+### Getting started with Google Cloud Platform
 
-### Get the tools
+#### Get the tools
 We are going to operate via command-line, not via the UI. For this reason, we need to install `gcloud`, `kubectl` and `helm`.
 
 To install gcloud and kubectl, perform the following steps:
@@ -332,7 +339,7 @@ To install gcloud and kubectl, perform the following steps:
   ```
 [] Install Helm following the [instructions](https://docs.helm.sh/using_helm/#install-helm).
 
-### Connect to gcloud to your project
+#### Connect to gcloud to your project
 At this point, you must have an account in GCP and a default project.
 
 ```bash
@@ -358,7 +365,7 @@ Your active configuration is: [cf-rabbitmq]
 
 > Optionally, you can manage your cluster via the GCP console, e.g. https://console.cloud.google.com/kubernetes/clusters
 
-### Create a cluster if you dont have one yet
+#### Create a cluster if you dont have one yet
 
 ```bash
 $ gcloud container clusters create [CLUSTER_NAME]
@@ -397,7 +404,7 @@ rabbitmq     ClusterIP   None          <none>        4369/TCP,5672/TCP,25672/TCP
 
 It looks like there is one rabbitmq service currently deployed.
 
-### Delete our cluster
+#### Delete our cluster
 
 ```
 gcloud container clusters delete [CLUSTER_NAME]
