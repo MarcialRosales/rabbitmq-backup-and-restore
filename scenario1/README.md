@@ -8,6 +8,7 @@
 - [Getting started](#Getting-started)  
   - [Get Kubernetes ready](#Get-Kubernetes-ready)  
   - [Get helm ready](#Get-helm-ready)
+  - [Get docker ready](#Get-docker-ready)
 - [Deploy scenario](#Deploy-scenario)
   - [Deploy RabbitMQ cluster et al.](#deploy-rabbitmq-cluster-et-al)
   - [Deploy consumer and producer application](#Deploy-consumer-and-producer-application)
@@ -81,6 +82,9 @@ We are going to use this [Helm chart](https://github.com/helm/charts/blob/master
   ```bash
   helm repo update
   ```
+
+### Get Docker ready
+We are going to use docker to generate private_key and certificates. Docker must be installed from where you are going to deploy this scenario.
 
 ## Deploy scenario
 
