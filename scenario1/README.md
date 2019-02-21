@@ -23,7 +23,8 @@
 **TODO**
 - Declare users via the helm chart configuration.
 - Add failures we could encounter with Shovel
-
+- Monitor backups thru Prometheus/Grafana dashboards
+  
 ## Introduction
 We want to move all the messages from a vhost on RabbitMQ cluster onto another another RabbitMQ cluster. The reasons why we need to do that are not important but imagine that we are upgrading a RabbitMQ cluster and we do not want to take any chances with the messages should the upgrade failed. Therefore, the first thing we do is to move all the messages to a **backup** RabbitMQ cluster until we complete the upgrade and then we move back all the messages from the **backup** RabbitMQ cluster to the former cluster.
 
